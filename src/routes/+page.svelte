@@ -12,7 +12,8 @@
 		Dropdown,
 		DropdownItem,
 		Modal,
-		Spinner
+		Spinner,
+		Progressbar
 	} from 'flowbite-svelte';
 	import { ListOutline, GridOutline, ChevronDownOutline, LinkOutline } from 'flowbite-svelte-icons';
 	import Map from 'ol/Map';
@@ -200,7 +201,12 @@
 										<TableBodyCell>{pad.full_name}</TableBodyCell>
 										<TableBodyCell>{pad.location.name}</TableBodyCell>
 										<TableBodyCell>{pad.location.region}</TableBodyCell>
-										<TableBodyCell>{calculateSuccessRate(pad).toFixed(1)}%</TableBodyCell>
+										<TableBodyCell>
+											<div>
+												<Progressbar progress={calculateSuccessRate(pad)} size="h-1.5" />
+												<span>{calculateSuccessRate(pad).toFixed(1)}%</span>
+											</div>
+										</TableBodyCell>
 										<TableBodyCell>
 											<a
 												href={pad.wikipedia}
@@ -224,11 +230,6 @@
 												{pad.status}
 											</span>
 										</TableBodyCell>
-										<!-- <TableBodyCell>
-											<Button on:click={() => showDetails(pad)} color="blue" size="xs"
-												>View Details</Button
-											>
-										</TableBodyCell> -->
 									</TableBodyRow>
 								{/each}
 							</TableBody>
