@@ -20,6 +20,9 @@ This project is a Svelte-based web application that visualizes SpaceX landing pa
 - Chart.js for data visualization
 - Tailwind CSS for styling
 
+## Ui
+![Spacex](https://github.com/user-attachments/assets/a3c8ff96-9777-4090-9efb-e5cf09099870)
+
 ## Getting Started
 
 ### Prerequisites
