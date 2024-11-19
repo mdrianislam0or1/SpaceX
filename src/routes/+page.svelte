@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import {
 		Table,
 		TableBody,
@@ -29,13 +28,17 @@
 	import type { LandingPad } from '$lib/types';
 	import Chart from '$lib/components/Chart.svelte';
 
-	let landingPads: LandingPad[] = [];
-	let loading = true;
-	let viewMode: 'list' | 'grid' = 'list';
-	let showDetailsModal = false;
-	let selectedPad: LandingPad | null = null;
-	let map: Map;
-	let filterStatus: string = 'all';
+	let landingPads = $state<LandingPad[]>([]);
+	let loading = $state(true);
+	let viewMode = $state<'list' | 'grid'>('list');
+	let showDetailsModal = $state(false);
+	let selectedPad = $state<LandingPad | null>(null);
+	let map = $state<Map | undefined | null>(null);
+	let filterStatus = $state('all');
+
+	const filteredPads = $derived(
+		landingPads.filter((pad) => filterStatus === 'all' || pad.status === filterStatus)
+	);
 
 	async function fetchLandingPads() {
 		try {
@@ -69,8 +72,7 @@
 				geometry: new Point(fromLonLat([pad.location.longitude, pad.location.latitude]))
 			});
 
-			const color =
-				pad.status === 'active' ? '#00B894' : pad.status === 'retired' ? '#FF6B6B' : '#4C6EF5';
+			const color = '#91F652';
 
 			feature.setStyle(
 				new Style({
@@ -95,7 +97,7 @@
 			.getLayers()
 			.getArray()
 			.filter((layer) => layer instanceof VectorLayer)
-			.forEach((layer) => map.removeLayer(layer));
+			.forEach((layer) => map?.removeLayer(layer));
 
 		map.addLayer(vectorLayer);
 	}
@@ -115,16 +117,20 @@
 		showDetailsModal = true;
 	}
 
-	onMount(fetchLandingPads);
+	$effect(() => {
+		fetchLandingPads();
+	});
 
-	$: filteredPads = landingPads.filter(
-		(pad) => filterStatus === 'all' || pad.status === filterStatus
-	);
+	$effect(() => {
+		if (filterStatus !== 'all') {
+			updateMap();
+		}
+	});
 </script>
 
 <div class="min-h-screen bg-gray-50">
 	<header class="border-b border-gray-200 bg-white">
-		<div class="mx-auto flex max-w-[1200px] items-center justify-center px-6 py-4">
+		<div class="mx-auto flex max-w-[1200px] items-center justify-center px-6 py-2">
 			<img src="/logo.png" alt="SpaceX" class="h-5" />
 		</div>
 	</header>
@@ -155,22 +161,22 @@
 						<ChevronDownOutline class="h-4 w-4" />
 					</div>
 				</Button>
-				<DropdownItem on:click={() => (filterStatus = 'all')}>All</DropdownItem>
-				<DropdownItem on:click={() => (filterStatus = 'active')}>
+				<DropdownItem on:click={() => handleFilterChange('all')}>All</DropdownItem>
+				<DropdownItem on:click={() => handleFilterChange('active')}>
 					<div class="flex items-center gap-2">
-						<span class="h-2 w-2 rounded-full bg-[#00B894]"></span>
+						<span class="h-2 w-2 rounded-full bg-[#91F652]"></span>
 						Active
 					</div>
 				</DropdownItem>
-				<DropdownItem on:click={() => (filterStatus = 'retired')}>
+				<DropdownItem on:click={() => handleFilterChange('retired')}>
 					<div class="flex items-center gap-2">
-						<span class="h-2 w-2 rounded-full bg-[#FF6B6B]"></span>
+						<span class="h-2 w-2 rounded-full bg-[#91F652]"></span>
 						Retired
 					</div>
 				</DropdownItem>
-				<DropdownItem on:click={() => (filterStatus = 'under_construction')}>
+				<DropdownItem on:click={() => handleFilterChange('under_construction')}>
 					<div class="flex items-center gap-2">
-						<span class="h-2 w-2 rounded-full bg-[#4C6EF5]"></span>
+						<span class="h-2 w-2 rounded-full bg-[#91F652]"></span>
 						Under Construction
 					</div>
 				</DropdownItem>
@@ -193,7 +199,6 @@
 								<TableHeadCell>Success Rate</TableHeadCell>
 								<TableHeadCell>Wikipedia</TableHeadCell>
 								<TableHeadCell>Status</TableHeadCell>
-								<!-- <TableHeadCell>Details</TableHeadCell> -->
 							</TableHead>
 							<TableBody>
 								{#each filteredPads as pad}
@@ -203,7 +208,11 @@
 										<TableBodyCell>{pad.location.region}</TableBodyCell>
 										<TableBodyCell>
 											<div>
-												<Progressbar progress={calculateSuccessRate(pad)} size="h-1.5" />
+												<Progressbar
+													progress={calculateSuccessRate(pad)}
+													size="h-1.5"
+													color="green"
+												/>
 												<span>{calculateSuccessRate(pad).toFixed(1)}%</span>
 											</div>
 										</TableBodyCell>
@@ -272,15 +281,6 @@
 				</div>
 
 				<Chart {landingPads} />
-
-				<!-- <div class="rounded-lg bg-white p-6 shadow-sm">
-					<h2 class="mb-4 text-lg font-medium">Success Rate Chart</h2>
-					<div class="flex h-[300px] items-center justify-center rounded-lg bg-gray-50">
-						<p class="text-gray-500">
-							Chart placeholder - implement with a chart library of your choice
-						</p>
-					</div>
-				</div> -->
 			</div>
 		</div>
 	</main>
